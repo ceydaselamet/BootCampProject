@@ -5,10 +5,8 @@ import jsbrfs.repository.ApplicantRepository;
 import jsbrfs.service.abstracts.ApplicantService;
 import jsbrfs.service.dtos.requests.applicants.CreateApplicantRequest;
 import jsbrfs.service.dtos.requests.applicants.UpdateApplicantRequest;
-import jsbrfs.service.dtos.responses.applicants.CreateApplicantResponse;
-import jsbrfs.service.dtos.responses.applicants.GetByIdApplicantResponse;
-import jsbrfs.service.dtos.responses.applicants.GetListApplicantResponse;
-import jsbrfs.service.dtos.responses.applicants.UpdateApplicantResponse;
+import jsbrfs.service.dtos.responses.applicants.*;
+import jsbrfs.service.rules.ApplicantBusinessRules;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,13 +16,17 @@ import java.util.stream.Collectors;
 public class ApplicantServiceImpl implements ApplicantService {
 
     private final ApplicantRepository applicantRepository;
+    private final ApplicantBusinessRules businessRules;
 
-    public ApplicantServiceImpl(ApplicantRepository applicantRepository) {
+    public ApplicantServiceImpl(ApplicantRepository applicantRepository, ApplicantBusinessRules businessRules) {
         this.applicantRepository = applicantRepository;
+        this.businessRules = businessRules;
     }
 
     @Override
     public CreateApplicantResponse add(CreateApplicantRequest request) {
+        businessRules.checkIfNationalIdentityExists(request.getNationalIdentity());
+        
         Applicant applicant = new Applicant();
 
         applicant.setUserName(request.getUserName());
@@ -44,27 +46,48 @@ public class ApplicantServiceImpl implements ApplicantService {
 
     @Override
     public UpdateApplicantResponse update(UpdateApplicantRequest request) {
-        Applicant applicant = applicantRepository.findById(request.getId())
+        businessRules.checkIfApplicantExists(request.getId());
+        
+        Applicant existingApplicant = applicantRepository.findById(request.getId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
+        
+        if (!existingApplicant.getNationalIdentity().equals(request.getNationalIdentity())) {
+            businessRules.checkIfNationalIdentityExists(request.getNationalIdentity());
+        }
+        
+        existingApplicant.setUserName(request.getUserName());
+        existingApplicant.setFirstName(request.getFirstName());
+        existingApplicant.setLastName(request.getLastName());
 
-        applicant.setUserName(request.getUserName());
-        applicant.setFirstName(request.getFirstName());
-        applicant.setLastName(request.getLastName());
+        existingApplicant.setDateOfBirth(request.getDateOfBirth());
+        existingApplicant.setNationalIdentity(request.getNationalIdentity());
+        existingApplicant.setEmail(request.getEmail());
+        existingApplicant.setPassword(request.getPassword());
 
-        applicant.setDateOfBirth(request.getDateOfBirth());
-        applicant.setNationalIdentity(request.getNationalIdentity());
-        applicant.setEmail(request.getEmail());
-        applicant.setPassword(request.getPassword());
+        existingApplicant.setAbout(request.getAbout());
 
-        applicant.setAbout(request.getAbout());
+        existingApplicant = applicantRepository.save(existingApplicant);
 
+        return mapToUpdateApplicantResponse(existingApplicant);
+    }
+
+    @Override
+    public DeleteApplicantResponse softDelete(Long id) {
+        businessRules.checkIfApplicantExists(id);
+        
+        Applicant applicant = applicantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Applicant not found"));
+        
+        applicant.setDeletedAt(java.time.LocalDateTime.now());
         applicant = applicantRepository.save(applicant);
-
-        return mapToUpdateApplicantResponse(applicant);
+        
+        return new DeleteApplicantResponse(applicant.getId(), true);
     }
 
     @Override
     public void delete(Long id) {
+        businessRules.checkIfApplicantExists(id);
+        
         Applicant applicant = applicantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
         applicantRepository.delete(applicant);

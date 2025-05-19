@@ -1,13 +1,14 @@
 package jsbrfs.entity;
 
 import jakarta.persistence.*;
+import jsbrfs.core.entities.BaseEntity;
 import jsbrfs.entity.enums.BootcampState;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "bootcamps")
-public class Bootcamp {
+public class Bootcamp extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

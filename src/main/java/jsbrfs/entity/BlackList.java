@@ -1,12 +1,13 @@
 package jsbrfs.entity;
 
 import jakarta.persistence.*;
+import jsbrfs.core.entities.BaseEntity;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "blackLists")
-public class BlackList {
+public class BlackList extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

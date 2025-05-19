@@ -3,10 +3,7 @@ package jsbrfs.service.mappers;
 import jsbrfs.entity.BlackList;
 import jsbrfs.service.dtos.requests.blackLists.CreateBlackListRequest;
 import jsbrfs.service.dtos.requests.blackLists.UpdateBlackListRequest;
-import jsbrfs.service.dtos.responses.blackLists.CreateBlackListResponse;
-import jsbrfs.service.dtos.responses.blackLists.GetByIdBlackListResponse;
-import jsbrfs.service.dtos.responses.blackLists.GetListBlackListResponse;
-import jsbrfs.service.dtos.responses.blackLists.UpdateBlackListResponse;
+import jsbrfs.service.dtos.responses.blackLists.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -32,4 +29,8 @@ public interface BlackListMapper {
 
     @Mapping(source = "applicant.id", target = "applicantId")
     GetListBlackListResponse getListResponseFromBlackList(BlackList blackList);
+
+    @Mapping(source = "applicant.id", target = "applicantId")
+    @Mapping(target = "success", constant = "true")
+    DeleteBlackListResponse deletedBlackListResponseFromBlackList(BlackList blackList);
 }

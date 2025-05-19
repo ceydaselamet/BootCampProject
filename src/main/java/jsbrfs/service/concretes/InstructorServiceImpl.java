@@ -3,9 +3,11 @@ package jsbrfs.service.concretes;
 import jsbrfs.entity.Instructor;
 import jsbrfs.repository.InstructorRepository;
 import jsbrfs.service.abstracts.InstructorService;
+import jsbrfs.service.rules.InstructorBusinessRules;
 import jsbrfs.service.dtos.requests.instructors.CreateInstructorRequest;
 import jsbrfs.service.dtos.requests.instructors.UpdateInstructorRequest;
 import jsbrfs.service.dtos.responses.instructors.CreateInstructorResponse;
+import jsbrfs.service.dtos.responses.instructors.DeleteInstructorResponse;
 import jsbrfs.service.dtos.responses.instructors.GetByIdInstructorResponse;
 import jsbrfs.service.dtos.responses.instructors.GetListInstructorResponse;
 import jsbrfs.service.dtos.responses.instructors.UpdateInstructorResponse;
@@ -18,13 +20,18 @@ import java.util.stream.Collectors;
 public class InstructorServiceImpl implements InstructorService {
 
     private final InstructorRepository repository;
+    private final InstructorBusinessRules businessRules;
 
-    public InstructorServiceImpl(InstructorRepository repository) {
+    public InstructorServiceImpl(InstructorRepository repository, InstructorBusinessRules businessRules) {
         this.repository = repository;
+        this.businessRules = businessRules;
     }
 
     @Override
     public CreateInstructorResponse add(CreateInstructorRequest request) {
+        businessRules.checkIfCompanyNameExists(request.getCompanyName());
+        businessRules.checkIfNationalIdentityExists(request.getNationalIdentity());
+        
         Instructor instructor = mapToInstructor(request);
         instructor = repository.save(instructor);
         return mapToCreateResponse(instructor);
@@ -32,8 +39,18 @@ public class InstructorServiceImpl implements InstructorService {
 
     @Override
     public UpdateInstructorResponse update(UpdateInstructorRequest request) {
+        businessRules.checkIfInstructorExists(request.getId());
+        
         Instructor instructor = repository.findById(request.getId())
                 .orElseThrow(() -> new RuntimeException("Instructor not found"));
+        
+        if (!instructor.getCompanyName().equals(request.getCompanyName())) {
+            businessRules.checkIfCompanyNameExists(request.getCompanyName());
+        }
+        
+        if (!instructor.getNationalIdentity().equals(request.getNationalIdentity())) {
+            businessRules.checkIfNationalIdentityExists(request.getNationalIdentity());
+        }
 
         updateInstructorFromRequest(instructor, request);
         instructor = repository.save(instructor);
@@ -42,7 +59,22 @@ public class InstructorServiceImpl implements InstructorService {
     }
 
     @Override
+    public DeleteInstructorResponse softDelete(Long id) {
+        businessRules.checkIfInstructorExists(id);
+        
+        Instructor instructor = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Instructor not found"));
+        
+        instructor.setDeletedAt(java.time.LocalDateTime.now());
+        instructor = repository.save(instructor);
+        
+        return new DeleteInstructorResponse(instructor.getId(), true);
+    }
+
+    @Override
     public void delete(Long id) {
+        businessRules.checkIfInstructorExists(id);
+        
         Instructor instructor = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instructor not found"));
         repository.delete(instructor);

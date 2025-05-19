@@ -6,6 +6,7 @@ import jsbrfs.service.abstracts.EmployeeService;
 import jsbrfs.service.dtos.requests.employees.CreateEmployeeRequest;
 import jsbrfs.service.dtos.requests.employees.UpdateEmployeeRequest;
 import jsbrfs.service.dtos.responses.employees.CreateEmployeeResponse;
+import jsbrfs.service.dtos.responses.employees.DeleteEmployeeResponse;
 import jsbrfs.service.dtos.responses.employees.GetByIdEmployeeResponse;
 import jsbrfs.service.dtos.responses.employees.GetListEmployeeResponse;
 import jsbrfs.service.dtos.responses.employees.UpdateEmployeeResponse;
@@ -37,6 +38,17 @@ public class EmployeeServiceImpl implements EmployeeService {
         updateEmployeeFromRequest(employee, request);
         employee = repository.save(employee);
         return mapToUpdateResponse(employee);
+    }
+
+    @Override
+    public DeleteEmployeeResponse softDelete(Long id) {
+        Employee employee = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        
+        employee.setDeletedAt(java.time.LocalDateTime.now());
+        employee = repository.save(employee);
+        
+        return new DeleteEmployeeResponse(employee.getId(), true);
     }
 
     @Override

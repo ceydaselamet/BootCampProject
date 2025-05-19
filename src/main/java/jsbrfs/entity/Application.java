@@ -1,12 +1,13 @@
 package jsbrfs.entity;
 
 import jakarta.persistence.*;
+import jsbrfs.core.entities.BaseEntity;
 import jsbrfs.entity.enums.ApplicationState;
 import jsbrfs.entity.enums.BootcampState;
 
 @Entity
 @Table(name = "applications")
-public class Application {
+public class Application extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
